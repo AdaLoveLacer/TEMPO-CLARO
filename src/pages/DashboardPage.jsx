@@ -1,10 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { useAuth } from '../hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
 import '../styles/DashboardPage.css';
 
 export const DashboardPage = () => {
-  const { user, handleLogout } = useAuth();
   const navigate = useNavigate();
   const [tasks, setTasks] = useState([]);
   const [stats, setStats] = useState({
@@ -57,11 +55,6 @@ export const DashboardPage = () => {
     });
   };
 
-  const handleLogoutClick = () => {
-    handleLogout();
-    navigate('/login');
-  };
-
   const handleNavigateToKanban = () => {
     navigate('/kanban');
   };
@@ -71,18 +64,6 @@ export const DashboardPage = () => {
       <header className="dashboard-header">
         <div className="header-content">
           <h1>TEMPO-CLARO</h1>
-          <div className="user-info">
-            {user?.picture && (
-              <img src={user.picture} alt={user.name} className="user-avatar" />
-            )}
-            <div className="user-details">
-              <p className="user-name">{user?.name}</p>
-              <p className="user-email">{user?.email}</p>
-            </div>
-            <button onClick={handleLogoutClick} className="logout-btn">
-              Sair
-            </button>
-          </div>
         </div>
       </header>
 

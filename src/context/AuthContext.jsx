@@ -10,6 +10,7 @@ export const AuthProvider = ({ children }) => {
   // Verifica se há um usuário logado ao carregar
   useEffect(() => {
     const savedUser = localStorage.getItem('user');
+    
     if (savedUser) {
       try {
         setUser(JSON.parse(savedUser));
@@ -21,31 +22,11 @@ export const AuthProvider = ({ children }) => {
     setIsLoading(false);
   }, []);
 
-  // Manipulador de login com Google
-  const handleLogin = useCallback(async (response) => {
+  // Manipulador de login
+  const handleLogin = useCallback((userData) => {
     try {
       setIsLoading(true);
       setError(null);
-
-      const { credential } = response;
-
-      // Enviar token para seu backend (opcional)
-      // const backendResponse = await fetch(`${import.meta.env.VITE_API_BASE_URL}/auth/google`, {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify({ token: credential })
-      // });
-
-      // Para este exemplo, decodificamos o token no cliente
-      const decoded = JSON.parse(atob(credential.split('.')[1]));
-
-      const userData = {
-        id: decoded.sub,
-        email: decoded.email,
-        name: decoded.name,
-        picture: decoded.picture,
-        loginTime: new Date().toISOString()
-      };
 
       setUser(userData);
       localStorage.setItem('user', JSON.stringify(userData));
@@ -62,6 +43,7 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
     localStorage.removeItem('user');
     setError(null);
+    console.log('✓ Usuário desconectado');
   }, []);
 
   const value = {
@@ -69,7 +51,7 @@ export const AuthProvider = ({ children }) => {
     isLoading,
     error,
     handleLogin,
-    handleLogout
+    handleLogout,
   };
 
   return (
@@ -78,3 +60,4 @@ export const AuthProvider = ({ children }) => {
     </AuthContext.Provider>
   );
 };
+

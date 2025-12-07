@@ -1,28 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { useAuth } from '../hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
 import '../styles/KanbanPage.css';
 import TaskBoard from '../components/Kanban/TaskBoard';
 
 export const KanbanPage = () => {
-  const { user, isLoading: authLoading, handleLogout } = useAuth();
   const navigate = useNavigate();
   const [tasks, setTasks] = useState([]);
-
-  // Se o usuário não está carregado, mostrar spinner
-  if (authLoading) {
-    return (
-      <div className="loading-container">
-        <div className="spinner"></div>
-        <p>Carregando dados...</p>
-      </div>
-    );
-  }
-
-  // Se não há usuário, isso não deveria acontecer (ProtectedRoute cuida disso)
-  if (!user) {
-    return null;
-  }
 
   // Carregar tarefas do localStorage ao montar o componente
   useEffect(() => {
@@ -107,7 +90,6 @@ export const KanbanPage = () => {
   };
 
   const handleLogoutClick = () => {
-    handleLogout();
     navigate('/login');
   };
 
@@ -127,18 +109,6 @@ export const KanbanPage = () => {
             >
               📊 Estatísticas
             </button>
-            <div className="user-info">
-              {user?.picture && (
-                <img src={user.picture} alt={user.name} className="user-avatar" />
-              )}
-              <div className="user-details">
-                <p className="user-name">{user?.name}</p>
-                <p className="user-email">{user?.email}</p>
-              </div>
-              <button onClick={handleLogoutClick} className="logout-btn">
-                Sair
-              </button>
-            </div>
           </div>
         </div>
       </header>
