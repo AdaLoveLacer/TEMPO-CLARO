@@ -424,14 +424,6 @@ export const LoginPage = () => {
           </p>
 
           <GoogleLoginButton />
-
-          <div className="login-divider">
-            <span>ou</span>
-          </div>
-
-          <button className="email-login-btn" disabled>
-            Fazer login com Email (em breve)
-          </button>
         </div>
 
         <div className="login-footer">
@@ -536,19 +528,6 @@ export const LoginPage = () => {
   flex: 1;
   height: 1px;
   background-color: #d1d5db;
-}
-
-.email-login-btn {
-  width: 100%;
-  padding: 12px;
-  font-size: 16px;
-  font-weight: 500;
-  color: #9ca3af;
-  background-color: #f3f4f6;
-  border: 1px solid #d1d5db;
-  border-radius: 8px;
-  cursor: not-allowed;
-  transition: all 0.3s ease;
 }
 
 .login-footer {

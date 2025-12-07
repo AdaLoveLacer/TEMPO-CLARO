@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { useAuth } from '../../hooks/useAuth';
-import './GoogleLoginButton.css';
+import '../../styles/GoogleLoginButton.css';
 
 export const GoogleLoginButton = () => {
   const { handleLogin } = useAuth();

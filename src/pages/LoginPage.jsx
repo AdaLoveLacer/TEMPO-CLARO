@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { GoogleLoginButton } from '../components/Auth/GoogleLoginButton';
-import './LoginPage.css';
+import '../styles/LoginPage.css';
 
 export const LoginPage = () => {
   const { user, isLoading } = useAuth();
@@ -11,7 +11,7 @@ export const LoginPage = () => {
   // Redirecionar se já estiver logado
   useEffect(() => {
     if (user && !isLoading) {
-      navigate('/dashboard');
+      navigate('/kanban');
     }
   }, [user, isLoading, navigate]);
 
@@ -40,14 +40,6 @@ export const LoginPage = () => {
           </p>
 
           <GoogleLoginButton />
-
-          <div className="login-divider">
-            <span>ou</span>
-          </div>
-
-          <button className="email-login-btn" disabled title="Em breve">
-            Fazer login com Email (em breve)
-          </button>
         </div>
 
         <div className="login-footer">
