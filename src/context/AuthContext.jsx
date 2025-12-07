@@ -1,4 +1,4 @@
-import React, { createContext, useState, useCallback, useEffect } from 'react';
+import React, { createContext, useState, useEffect, useCallback } from 'react';
 
 export const AuthContext = createContext(null);
 
@@ -6,109 +6,122 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [accessToken, setAccessToken] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState(null);
   const [tokenClient, setTokenClient] = useState(null);
 
   useEffect(() => {
-    // 1. Carregar usuário salvo
+    // 1. Verificar se há sessão salva
     const savedUser = localStorage.getItem('user');
-    if (savedUser) {
-      setUser(JSON.parse(savedUser));
+    const savedToken = localStorage.getItem('accessToken');
+    const savedExpiration = localStorage.getItem('tokenExpiration');
+
+    if (savedUser && savedToken && savedExpiration) {
+      // Verifica se o token ainda é válido (duração de 1h)
+      if (new Date().getTime() < parseInt(savedExpiration)) {
+        setUser(JSON.parse(savedUser));
+        setAccessToken(savedToken);
+      } else {
+        // Token expirou, limpar tudo
+        handleLogout();
+      }
     }
 
-    // 2. Função robusta para iniciar o Token Client (Calendário)
-    const initTokenClient = () => {
+    // 2. Inicializar o cliente OAuth (Unificado)
+    const initClient = () => {
       if (window.google && window.google.accounts && window.google.accounts.oauth2) {
-        try {
-          const client = window.google.accounts.oauth2.initTokenClient({
-            client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID,
-            scope: 'https://www.googleapis.com/auth/calendar',
-            callback: (tokenResponse) => {
-              if (tokenResponse && tokenResponse.access_token) {
-                setAccessToken(tokenResponse.access_token);
-              }
-            },
-          });
-          setTokenClient(client);
-          return true; // Sucesso
-        } catch (err) {
-          console.error("Erro ao iniciar token client:", err);
-          return false;
-        }
+        const client = window.google.accounts.oauth2.initTokenClient({
+          client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID,
+          // PEDIMOS TUDO AQUI: Perfil, Email E Calendário
+          scope: 'https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/calendar',
+          callback: async (tokenResponse) => {
+            if (tokenResponse && tokenResponse.access_token) {
+              handleAuthSuccess(tokenResponse.access_token, tokenResponse.expires_in);
+            }
+          },
+        });
+        setTokenClient(client);
+        return true;
       }
-      return false; // Google ainda não carregou
+      return false;
     };
 
-    // 3. Tenta iniciar imediatamente, se falhar, tenta a cada 500ms
-    if (!initTokenClient()) {
+    // Tentativa de inicialização (retry se script não carregou)
+    if (!initClient()) {
       const timer = setInterval(() => {
-        if (initTokenClient()) {
-          clearInterval(timer);
-        }
+        if (initClient()) clearInterval(timer);
       }, 500);
       return () => clearInterval(timer);
     }
-
+    
     setIsLoading(false);
   }, []);
 
-  const getCalendarToken = useCallback(() => {
-    return new Promise((resolve) => {
-      if (accessToken) {
-        resolve(accessToken);
-        return;
-      }
-
-      if (tokenClient) {
-        tokenClient.callback = (resp) => {
-          if (resp.error) {
-            console.error("Erro OAuth:", resp);
-            resolve(null);
-          }
-          setAccessToken(resp.access_token);
-          resolve(resp.access_token);
-        };
-        // Pede permissão ao usuário
-        tokenClient.requestAccessToken({ prompt: '' }); 
-      } else {
-        console.warn("Token Client do Google não inicializado ainda.");
-        resolve(null);
-      }
-    });
-  }, [accessToken, tokenClient]);
-
-  const handleLogin = useCallback(async (response) => {
+  // Processar o sucesso da autenticação
+  const handleAuthSuccess = async (token, expiresInSeconds) => {
     try {
-      const { credential } = response;
-      const decoded = JSON.parse(atob(credential.split('.')[1]));
+      setAccessToken(token);
       
-      const userData = {
-        id: decoded.sub,
-        email: decoded.email,
-        name: decoded.name,
-        picture: decoded.picture,
-        loginTime: new Date().toISOString()
+      // Salvar token e expiração
+      const expirationTime = new Date().getTime() + (expiresInSeconds * 1000);
+      localStorage.setItem('accessToken', token);
+      localStorage.setItem('tokenExpiration', expirationTime);
+
+      // 3. Buscar dados do usuário manualmente usando o token
+      const userInfoResponse = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      const userData = await userInfoResponse.json();
+      
+      const userPayload = {
+        id: userData.sub,
+        name: userData.name,
+        email: userData.email,
+        picture: userData.picture
       };
 
-      setUser(userData);
-      localStorage.setItem('user', JSON.stringify(userData));
-    } catch (err) {
-      console.error(err);
-      setError('Falha ao fazer login.');
-    }
-  }, []);
+      setUser(userPayload);
+      localStorage.setItem('user', JSON.stringify(userPayload));
 
-  const handleLogout = useCallback(() => {
+    } catch (error) {
+      console.error("Erro ao buscar dados do usuário:", error);
+    }
+  };
+
+  // Função chamada pelo Botão de Login
+  const loginWithGoogle = () => {
+    if (tokenClient) {
+      // Isso abre o popup pedindo Login E Agenda de uma vez
+      tokenClient.requestAccessToken();
+    } else {
+      console.error("Cliente Google não inicializado");
+    }
+  };
+
+  const getCalendarToken = useCallback(async () => {
+    // Como pedimos tudo no login, o accessToken já serve para a agenda
+    return accessToken;
+  }, [accessToken]);
+
+  const handleLogout = () => {
     setUser(null);
     setAccessToken(null);
     localStorage.removeItem('user');
+    localStorage.removeItem('accessToken');
+    localStorage.removeItem('tokenExpiration');
     if (window.google) {
       window.google.accounts.id.disableAutoSelect();
     }
-  }, []);
+  };
 
   return (
-    <AuthContext.Provider value={{ user, accessToken, getCalendarToken, isLoading, error, handleLogin, handleLogout }}>
+    <AuthContext.Provider value={{ 
+      user, 
+      accessToken, 
+      isLoading, 
+      loginWithGoogle, // Nova função exportada
+      handleLogout,
+      getCalendarToken 
+    }}>
       {children}
     </AuthContext.Provider>
   );

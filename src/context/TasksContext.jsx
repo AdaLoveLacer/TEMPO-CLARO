@@ -1,3 +1,4 @@
+// src/context/TasksContext.jsx
 import React, { createContext, useState, useEffect, useContext } from 'react';
 import { useAuth } from '../hooks/useAuth';
 
@@ -19,10 +20,13 @@ export const TasksProvider = ({ children }) => {
   }, [tasks]);
 
   const syncWithGoogleCalendar = async (task) => {
-    // Chama a função do AuthContext para garantir o token
+    // 1. Pega o token direto (já deve estar logado e autorizado)
     const token = await getCalendarToken();
     
-    if (!token) return null;
+    if (!token) {
+      alert("Erro: Você precisa estar logado para sincronizar.");
+      return null;
+    }
 
     const event = {
       summary: task.title,
@@ -40,8 +44,17 @@ export const TasksProvider = ({ children }) => {
         },
         body: JSON.stringify(event),
       });
+      
+      if (!response.ok) {
+        // Se der erro 401 (Unauthorized), o token expirou
+        if (response.status === 401) {
+             alert("Sessão expirada. Por favor, faça login novamente.");
+             // Aqui você poderia chamar um logout automático se quisesse
+        }
+        throw new Error('Falha na API Google');
+      }
+
       const data = await response.json();
-      if (data.error) throw data.error;
       console.log("Sucesso Google Agenda:", data);
       return data.id;
     } catch (error) {
@@ -63,7 +76,6 @@ export const TasksProvider = ({ children }) => {
     setTasks((prev) => [...prev, newTask]);
 
     if (addToGoogle) {
-      // Se o usuário marcou o checkbox, chama a sincronização
       const googleId = await syncWithGoogleCalendar(newTask);
       if (googleId) {
         setTasks((prev) => 

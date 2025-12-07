@@ -1,45 +1,23 @@
-import React, { useEffect, useRef } from 'react';
+import React from 'react';
 import { useAuth } from '../../hooks/useAuth';
 import '../../styles/GoogleLoginButton.css';
 
 export const GoogleLoginButton = () => {
-  const { handleLogin } = useAuth();
-  const googleButtonRef = useRef(null);
-
-  useEffect(() => {
-    const renderButton = () => {
-      if (window.google && googleButtonRef.current) {
-        try {
-          window.google.accounts.id.initialize({
-            client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID,
-            callback: handleLogin,
-            auto_select: false
-          });
-
-          window.google.accounts.id.renderButton(
-            googleButtonRef.current,
-            { type: 'standard', size: 'large', text: 'signin_with', theme: 'outline', width: '250' }
-          );
-          return true;
-        } catch (e) {
-          console.error(e);
-          return false;
-        }
-      }
-      return false;
-    };
-
-    if (!renderButton()) {
-      const timer = setInterval(() => {
-        if (renderButton()) clearInterval(timer);
-      }, 500);
-      return () => clearInterval(timer);
-    }
-  }, [handleLogin]);
+  const { loginWithGoogle } = useAuth();
 
   return (
     <div className="google-login-button-wrapper">
-      <div ref={googleButtonRef} id="googleButton" style={{minHeight: '40px', minWidth: '200px'}}></div>
+      <button 
+        onClick={loginWithGoogle}
+        className="custom-google-btn"
+      >
+        <img 
+          src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" 
+          alt="Google logo" 
+          className="google-icon"
+        />
+        <span>Entrar com Google e Permitir Agenda</span>
+      </button>
     </div>
   );
 };
