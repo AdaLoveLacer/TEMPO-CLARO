@@ -84,6 +84,20 @@
   background-color: #d1d5db;
 }
 
+.email-login-btn {
+  width: 100%;
+  padding: 12px;
+  font-size: 16px;
+  font-weight: 500;
+  color: #9ca3af;
+  background-color: #f3f4f6;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  cursor: not-allowed;
+  transition: all 0.3s ease;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
 .login-footer {
   margin-top: 24px;
   padding-top: 24px;
@@ -156,5 +170,10 @@
 
   .login-description {
     font-size: 13px;
+  }
+
+  .email-login-btn {
+    font-size: 14px;
+    padding: 10px;
   }
 }
