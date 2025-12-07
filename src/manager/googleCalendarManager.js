@@ -5,26 +5,36 @@
 
 export const googleCalendarManager = {
   /**
-   * Inicializa a API do Google Calendar (Carrega o script gapi)
+   * Inicializa a API do Google Calendar de forma robusta
    */
   async initializeCalendarAPI() {
     return new Promise((resolve, reject) => {
-      if (!window.gapi) {
-        reject(new Error('Google API Script não carregado'));
+      // Função interna para inicializar o cliente quando o gapi estiver pronto
+      const initGapiClient = () => {
+        window.gapi.load('client', async () => {
+          try {
+            await window.gapi.client.init({
+              discoveryDocs: ['https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest'],
+            });
+            resolve();
+          } catch (error) {
+            reject(error);
+          }
+        });
+      };
+
+      // Cenário 1: gapi já existe
+      if (window.gapi) {
+        initGapiClient();
         return;
       }
-      
-      window.gapi.load('client', async () => {
-        try {
-          // Apenas carrega o cliente, a autenticação vem de fora
-          await window.gapi.client.init({
-            discoveryDocs: ['https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest'],
-          });
-          resolve();
-        } catch (error) {
-          reject(error);
-        }
-      });
+
+      // Cenário 2: gapi não existe, precisamos carregar o script dinamicamente
+      const script = document.createElement('script');
+      script.src = 'https://apis.google.com/js/api.js';
+      script.onload = () => initGapiClient();
+      script.onerror = () => reject(new Error('Falha ao carregar script do Google API'));
+      document.body.appendChild(script);
     });
   },
 
@@ -36,11 +46,11 @@ export const googleCalendarManager = {
   async syncRoutineToCalendar(routine, accessToken) {
     try {
       if (!accessToken) {
-        throw new Error('Token de acesso inválido ou expirado.');
+        throw new Error('Token de acesso inválido. Por favor, faça login novamente.');
       }
 
-      // Garante que a API está carregada
-      if (!window.gapi.client) {
+      // AQUI ESTAVA O ERRO: Verificamos se window.gapi existe antes de acessar .client
+      if (!window.gapi || !window.gapi.client) {
         await this.initializeCalendarAPI();
       }
 
@@ -54,7 +64,6 @@ export const googleCalendarManager = {
       const eventsToCreate = [];
       
       for (const task of routine.tasks) {
-        // Gera todas as datas que essa tarefa acontece
         const dates = this.generateEventDates(
           routine.startDate,
           routine.endDate,
@@ -62,7 +71,6 @@ export const googleCalendarManager = {
           task.daysOfWeek
         );
 
-        // Cria um evento para cada data
         for (const date of dates) {
           const eventPayload = this.buildCalendarEvent(task, date, routine.color);
           eventsToCreate.push(eventPayload);
@@ -72,7 +80,6 @@ export const googleCalendarManager = {
       // 3. Enviar eventos para o Google
       const results = { successful: 0, failed: 0, errors: [] };
 
-      // Nota: Em produção, o ideal é usar "batch requests", mas faremos loop simples para garantir funcionamento
       for (const event of eventsToCreate) {
         try {
           await window.gapi.client.calendar.events.insert({
@@ -83,12 +90,12 @@ export const googleCalendarManager = {
         } catch (err) {
           console.error('Erro ao criar evento:', event.summary, err);
           results.failed++;
-          results.errors.push(err.message);
+          results.errors.push(err.message || 'Erro desconhecido');
         }
       }
 
       return {
-        success: results.failed === 0, // Sucesso total se nenhuma falhar
+        success: results.failed === 0,
         totalEvents: eventsToCreate.length,
         successful: results.successful,
         failed: results.failed,
@@ -100,17 +107,15 @@ export const googleCalendarManager = {
       console.error('Erro na sincronização:', error);
       return {
         success: false,
-        error: error.message || 'Erro desconhecido na sincronização',
+        error: error.message || 'Erro de conexão com Google Calendar',
       };
     }
   },
 
-  /**
-   * Obtém ou cria um calendário específico para o app
-   */
+  // --- Funções Auxiliares (Mantidas iguais) ---
+
   async getOrCreateRoutineCalendar() {
     try {
-      // Lista calendários existentes
       const response = await window.gapi.client.calendar.calendarList.list();
       const calendars = response.result.items || [];
       
@@ -122,7 +127,6 @@ export const googleCalendarManager = {
         return existingCalendar.id;
       }
 
-      // Cria novo se não existir
       const newCalendar = await window.gapi.client.calendar.calendars.insert({
         resource: {
           summary: 'TEMPO-CLARO Rotinas',
@@ -133,21 +137,18 @@ export const googleCalendarManager = {
 
       return newCalendar.result.id;
     } catch (error) {
-      throw new Error('Falha ao acessar calendário. Verifique as permissões.');
+      throw new Error('Falha ao acessar calendário. Verifique se deu permissão.');
     }
   },
 
-  /**
-   * Gera lista de datas baseada na recorrência
-   */
   generateEventDates(startDate, endDate, recurrence, daysOfWeek) {
     const dates = [];
     const start = new Date(startDate);
     const end = new Date(endDate);
     
-    // Ajustar fuso horário para garantir comparação correta de datas (apenas dia)
-    start.setHours(0,0,0,0);
-    end.setHours(0,0,0,0);
+    // Ajuste de fuso para garantir cálculo correto de dias
+    start.setHours(12,0,0,0);
+    end.setHours(12,0,0,0);
 
     const dayNumberMap = {
       'domingo': 0, 'segunda': 1, 'terça': 2, 'quarta': 3, 
@@ -161,19 +162,15 @@ export const googleCalendarManager = {
     while (current <= end) {
       const dayOfWeek = current.getDay();
 
-      // Se for "once" (uma vez), adiciona só a data de início e para
       if (recurrence === 'once') {
         dates.push(current.toISOString().split('T')[0]);
         break;
       }
 
-      // Se for diário ou o dia da semana bater com os escolhidos
       if (recurrence === 'daily' || selectedDayNumbers.includes(dayOfWeek)) {
         dates.push(current.toISOString().split('T')[0]);
       }
       
-      // Se for semanal ou mensal, a lógica básica aqui trata como "nos dias selecionados dentro do período"
-      // Avança um dia
       current.setDate(current.getDate() + 1);
     }
 
@@ -181,7 +178,6 @@ export const googleCalendarManager = {
   },
 
   buildCalendarEvent(task, date, routineColor) {
-    // Formata hora (09:00 -> 09, 00)
     const [startHour, startMin] = task.startTime.split(':');
     const [endHour, endMin] = task.endTime.split(':');
 
@@ -201,18 +197,20 @@ export const googleCalendarManager = {
   },
 
   mapColorToGoogleColorId(hexColor) {
-    // Mapeamento simples de cores
     const colorMap = {
-      '#667eea': '1', '#764ba2': '2', '#10b981': '3', 
-      '#f59e0b': '4', '#ef4444': '5', '#06b6d4': '6', '#ec4899': '7'
+      '#667eea': '9', // Azul (Blueberry)
+      '#764ba2': '3', // Roxo (Grape)
+      '#10b981': '10', // Verde (Basil)
+      '#f59e0b': '6', // Laranja (Tangerine)
+      '#ef4444': '11', // Vermelho (Tomato)
     };
-    return colorMap[hexColor] || '1'; // Azul padrão se não achar
+    return colorMap[hexColor] || '9';
   },
 
   buildResultMessage(result) {
     if (result.failed === 0) return `✅ ${result.successful} eventos sincronizados!`;
-    if (result.successful === 0) return `❌ Falha total. Erros: ${result.errors[0]}`;
-    return `⚠️ Parcial: ${result.successful} sucessos, ${result.failed} falhas.`;
+    if (result.successful === 0) return `❌ Falha total. Erro: ${result.errors[0]}`;
+    return `⚠️ Parcial: ${result.successful} ok, ${result.failed} falhas.`;
   },
 
   openGoogleCalendar(calendarId) {
