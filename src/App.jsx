@@ -1,7 +1,6 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
-import { TasksProvider } from './context/TasksContext'; // <--- ADICIONEI ESTE IMPORT
 import { LoginPage } from './pages/LoginPage';
 import { KanbanPage } from './pages/KanbanPage';
 import { DashboardPage } from './pages/DashboardPage';
@@ -12,30 +11,26 @@ function App() {
   return (
     <Router>
       <AuthProvider>
-        {/* O TasksProvider precisa ficar AQUI, dentro do AuthProvider, 
-            para que as tarefas tenham acesso ao token do Google */}
-        <TasksProvider> 
-          <Routes>
-            <Route path="/login" element={<LoginPage />} />
-            <Route
-              path="/kanban"
-              element={
-                <ProtectedRoute>
-                  <KanbanPage />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/dashboard"
-              element={
-                <ProtectedRoute>
-                  <DashboardPage />
-                </ProtectedRoute>
-              }
-            />
-            <Route path="/" element={<Navigate to="/kanban" replace />} />
-          </Routes>
-        </TasksProvider>
+        <Routes>
+          <Route path="/login" element={<LoginPage />} />
+          <Route
+            path="/kanban"
+            element={
+              <ProtectedRoute>
+                <KanbanPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/dashboard"
+            element={
+              <ProtectedRoute>
+                <DashboardPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route path="/" element={<Navigate to="/kanban" replace />} />
+        </Routes>
       </AuthProvider>
     </Router>
   );

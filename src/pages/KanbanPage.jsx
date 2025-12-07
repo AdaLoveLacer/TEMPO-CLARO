@@ -1,18 +1,16 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../hooks/useAuth';
-import { useTasks } from '../context/TasksContext';
 import { useNavigate } from 'react-router-dom';
+import { kanbanManager } from '../manager/kanbanManager';
 import '../styles/KanbanPage.css';
 import TaskBoard from '../components/Kanban/TaskBoard';
 
 export const KanbanPage = () => {
   const { user, isLoading: authLoading, handleLogout } = useAuth();
-  
-  // Consumindo dados e funções do Contexto de Tarefas
-  const { tasks, addTask, deleteTask, toggleTaskCompletion, updateTask } = useTasks();
-  
   const navigate = useNavigate();
+  const [tasks, setTasks] = useState([]);
 
+  // Se o usuário não está carregado, mostrar spinner
   if (authLoading) {
     return (
       <div className="loading-container">
@@ -22,57 +20,60 @@ export const KanbanPage = () => {
     );
   }
 
-  // Categorizar tarefas (Lógica de visualização apenas)
+  // Se não há usuário, isso não deveria acontecer (ProtectedRoute cuida disso)
+  if (!user) {
+    return null;
+  }
+
+  // Carregar tarefas do localStorage ao montar o componente
+  useEffect(() => {
+    const loadedTasks = kanbanManager.loadTasksFromStorage();
+    setTasks(loadedTasks);
+  }, []);
+
+  // Salvar tarefas no localStorage sempre que mudar
+  useEffect(() => {
+    kanbanManager.saveTasksToStorage(tasks);
+  }, [tasks]);
+
+  // Categorizar tarefas por status baseado na data
   const categorizeTasks = () => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    return kanbanManager.categorizeTasks(tasks);
+  };
 
-    const todoTasks = [];
-    const inProgressTasks = [];
-    const completedTasks = [];
+  const handleAddTask = (taskData) => {
+    const newTask = kanbanManager.createTask(taskData);
+    setTasks([...tasks, newTask]);
+  };
 
-    // Usamos 'tasks' que vem do Contexto global
-    tasks.forEach((task) => {
-      const taskDate = new Date(task.date);
-      taskDate.setHours(0, 0, 0, 0);
+  const handleDeleteTask = (taskId) => {
+    setTasks(kanbanManager.deleteTask(tasks, taskId));
+  };
 
-      if (task.completed) {
-        completedTasks.push(task);
-      } else if (taskDate.getTime() === today.getTime()) {
-        inProgressTasks.push(task);
-      } else if (taskDate > today) {
-        todoTasks.push(task);
-      } else {
-        // Tarefas passadas não concluídas vão para "Em Progresso"
-        inProgressTasks.push(task);
-      }
-    });
+  const handleCompleteTask = (taskId) => {
+    setTasks(kanbanManager.toggleCompleteTask(tasks, taskId));
+  };
 
-    const sortByDate = (a, b) => new Date(b.date) - new Date(a.date);
-
-    return {
-      todo: todoTasks.sort(sortByDate),
-      inProgress: inProgressTasks.sort(sortByDate),
-      completed: completedTasks.sort(sortByDate),
-    };
+  const handleUpdateTask = (updatedTask) => {
+    setTasks(kanbanManager.updateTask(tasks, updatedTask));
   };
 
   const handleLogoutClick = () => {
-    handleLogout();
-    navigate('/login');
+    kanbanManager.handleLogout(handleLogout, navigate);
   };
 
   const categorizedTasks = categorizeTasks();
 
   return (
     <div className="kanban-container">
+      {/* Header */}
       <header className="kanban-header">
         <div className="header-content">
           <h1>TEMPO-CLARO</h1>
           <div className="header-actions">
             <button 
               className="btn-stats" 
-              onClick={() => navigate('/dashboard')}
+              onClick={() => kanbanManager.navigateToDashboard(navigate)}
               title="Ver estatísticas"
             >
               📊 Estatísticas
@@ -93,20 +94,16 @@ export const KanbanPage = () => {
         </div>
       </header>
 
+      {/* Main Content */}
       <main className="kanban-main">
         <TaskBoard
           todoTasks={categorizedTasks.todo}
           inProgressTasks={categorizedTasks.inProgress}
           completedTasks={categorizedTasks.completed}
-          
-          /* AQUI ESTÁ A ATUALIZAÇÃO:
-             Recebemos os dados da tarefa E o booleano do checkbox (addToGoogle)
-             e passamos para a função do contexto. */
-          onAddTask={(taskData, addToGoogle) => addTask(taskData, addToGoogle)}
-          
-          onDeleteTask={deleteTask}
-          onCompleteTask={toggleTaskCompletion}
-          onUpdateTask={updateTask}
+          onAddTask={handleAddTask}
+          onDeleteTask={handleDeleteTask}
+          onCompleteTask={handleCompleteTask}
+          onUpdateTask={handleUpdateTask}
         />
       </main>
     </div>
