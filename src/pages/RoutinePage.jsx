@@ -2,19 +2,21 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { routineManager } from '../manager/routineManager';
+import { googleCalendarManager } from '../manager/googleCalendarManager'; // Importado
 import RoutineForm from '../components/Routine/RoutineForm';
 import '../styles/RoutinePage.css';
 
 export const RoutinePage = () => {
-  const { user, handleLogout } = useAuth();
+  // Pegamos o accessToken aqui
+  const { user, accessToken, handleLogout } = useAuth();
   const navigate = useNavigate();
+  
   const [routines, setRoutines] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [filterStatus, setFilterStatus] = useState('active');
   const [editingRoutine, setEditingRoutine] = useState(null);
   const [syncStatus, setSyncStatus] = useState(null);
 
-  // Carregar rotinas ao montar
   useEffect(() => {
     loadRoutines();
   }, []);
@@ -43,24 +45,42 @@ export const RoutinePage = () => {
     }
   };
 
+  // Função de exportação REAL
   const handleExportToGoogle = async (routine) => {
+    if (!accessToken) {
+      alert("Você precisa fazer login novamente para obter permissão do calendário.");
+      return;
+    }
+
     try {
-      setSyncStatus({ status: 'loading', message: 'Sincronizando com Google Calendar...' });
+      setSyncStatus({ status: 'loading', message: 'Conectando ao Google Calendar...' });
 
-      const events = routineManager.convertToGoogleCalendarEvents(routine);
-      
-      // Aqui você chamaria a API do Google Calendar
-      // Por enquanto, vamos simular o sucesso
-      setSyncStatus({
-        status: 'success',
-        message: `✅ ${events.length} eventos adicionados ao Google Calendar com sucesso!`,
-      });
+      // Chama o manager passando a rotina e o token
+      const result = await googleCalendarManager.syncRoutineToCalendar(routine, accessToken);
 
-      setTimeout(() => setSyncStatus(null), 3000);
+      if (result.success) {
+        setSyncStatus({
+          status: 'success',
+          message: result.message,
+        });
+        
+        // Abre o calendário após 1.5s
+        setTimeout(() => {
+          googleCalendarManager.openGoogleCalendar(result.calendarId);
+        }, 1500);
+
+      } else {
+        throw new Error(result.error || 'Erro na sincronização');
+      }
+
+      // Limpa msg após 5s
+      setTimeout(() => setSyncStatus(null), 5000);
+
     } catch (error) {
+      console.error(error);
       setSyncStatus({
         status: 'error',
-        message: `❌ Erro ao sincronizar: ${error.message}`,
+        message: `❌ Erro: ${error.message}`,
       });
     }
   };
@@ -75,7 +95,6 @@ export const RoutinePage = () => {
 
   return (
     <div className="routine-page-container">
-      {/* Header */}
       <header className="routine-header">
         <div className="header-content">
           <h1>TEMPO-CLARO</h1>
@@ -103,7 +122,6 @@ export const RoutinePage = () => {
         </div>
       </header>
 
-      {/* Main Content */}
       <main className="routine-main">
         {showForm ? (
           <div className="form-section-wrapper">
@@ -123,14 +141,12 @@ export const RoutinePage = () => {
           </div>
         ) : (
           <div className="routines-section">
-            {/* Sync Status Message */}
             {syncStatus && (
               <div className={`sync-status sync-${syncStatus.status}`}>
                 {syncStatus.message}
               </div>
             )}
 
-            {/* Top Bar */}
             <div className="top-bar">
               <button
                 className="btn-new-routine"
@@ -144,35 +160,24 @@ export const RoutinePage = () => {
                   className={`filter-btn ${filterStatus === 'active' ? 'active' : ''}`}
                   onClick={() => setFilterStatus('active')}
                 >
-                  ✓ Ativas ({routineManager.filterRoutinesByStatus(routines, 'active').length})
+                  Ativas
                 </button>
                 <button
                   className={`filter-btn ${filterStatus === 'future' ? 'active' : ''}`}
                   onClick={() => setFilterStatus('future')}
                 >
-                  📅 Futuras ({routineManager.filterRoutinesByStatus(routines, 'future').length})
-                </button>
-                <button
-                  className={`filter-btn ${filterStatus === 'past' ? 'active' : ''}`}
-                  onClick={() => setFilterStatus('past')}
-                >
-                  ✓ Passadas ({routineManager.filterRoutinesByStatus(routines, 'past').length})
+                  Futuras
                 </button>
               </div>
             </div>
 
-            {/* Routines List */}
             <div className="routines-list">
               {filteredRoutines.length === 0 ? (
                 <div className="empty-state">
                   <p className="empty-icon">📭</p>
                   <h3>Nenhuma rotina encontrada</h3>
-                  <p>Crie sua primeira rotina para começar!</p>
-                  <button
-                    className="btn-create"
-                    onClick={() => setShowForm(true)}
-                  >
-                    ➕ Criar Primeira Rotina
+                  <button className="btn-create" onClick={() => setShowForm(true)}>
+                    ➕ Criar Rotina
                   </button>
                 </div>
               ) : (
@@ -186,68 +191,25 @@ export const RoutinePage = () => {
                       <div className="routine-title">
                         <h3>📅 {routine.name}</h3>
                         <span className="routine-dates">
-                          {new Date(routine.startDate).toLocaleDateString('pt-BR')} até{' '}
-                          {new Date(routine.endDate).toLocaleDateString('pt-BR')}
+                           Início: {new Date(routine.startDate).toLocaleDateString('pt-BR')}
                         </span>
-                      </div>
-                      <div className="routine-badge">
-                        {routine.isActive ? '✓ Ativa' : '○ Inativa'}
                       </div>
                     </div>
 
                     <div className="routine-info">
-                      <span className="info-item">
-                        🎯 {routine.tasks.length} tarefa{routine.tasks.length !== 1 ? 's' : ''}
-                      </span>
-                      <span className="info-item">
-                        ⏱️ {totalDuration(routine)} total
-                      </span>
+                      <span className="info-item">🎯 {routine.tasks.length} tarefas</span>
+                      <span className="info-item">⏱️ {totalDuration(routine)}/dia</span>
                     </div>
 
-                    {routine.tasks.length > 0 && (
-                      <div className="routine-preview">
-                        {routine.tasks.slice(0, 3).map(task => (
-                          <div key={task.id} className="preview-task">
-                            <span className="task-time">🕐 {task.startTime}</span>
-                            <span className="task-title">{task.title}</span>
-                          </div>
-                        ))}
-                        {routine.tasks.length > 3 && (
-                          <div className="preview-more">
-                            +{routine.tasks.length - 3} mais...
-                          </div>
-                        )}
-                      </div>
-                    )}
-
                     <div className="routine-actions">
-                      <button
-                        className="btn-action btn-view"
-                        title="Visualizar"
-                        onClick={() => handleEditRoutine(routine)}
-                      >
-                        👁️ Ver
-                      </button>
-                      <button
-                        className="btn-action btn-edit"
-                        title="Editar"
-                        onClick={() => handleEditRoutine(routine)}
-                      >
+                      <button className="btn-action btn-edit" onClick={() => handleEditRoutine(routine)}>
                         ✏️ Editar
                       </button>
-                      <button
-                        className="btn-action btn-export"
-                        title="Exportar para Google Calendar"
-                        onClick={() => handleExportToGoogle(routine)}
-                      >
+                      <button className="btn-action btn-export" onClick={() => handleExportToGoogle(routine)}>
                         📅 Exportar
                       </button>
-                      <button
-                        className="btn-action btn-delete"
-                        title="Deletar"
-                        onClick={() => handleDeleteRoutine(routine.id)}
-                      >
-                        🗑️ Delete
+                      <button className="btn-action btn-delete" onClick={() => handleDeleteRoutine(routine.id)}>
+                        🗑️
                       </button>
                     </div>
                   </div>
@@ -260,5 +222,3 @@ export const RoutinePage = () => {
     </div>
   );
 };
-
-export default RoutinePage;

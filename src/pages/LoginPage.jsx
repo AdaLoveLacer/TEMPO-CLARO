@@ -11,7 +11,7 @@ export const LoginPage = () => {
   // Redirecionar se já estiver logado
   useEffect(() => {
     if (user && !isLoading) {
-      navigate('/kanban');
+      navigate('/routine');
     }
   }, [user, isLoading, navigate]);
 
