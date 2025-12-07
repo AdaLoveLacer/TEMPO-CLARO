@@ -1,0 +1,19 @@
+.google-login-button-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  margin: 20px 0;
+}
+
+.google-login-button-wrapper > div {
+  display: flex;
+  justify-content: center;
+}
+
+/* Responsivo */
+@media (max-width: 768px) {
+  .google-login-button-wrapper {
+    margin: 16px 0;
+  }
+}
