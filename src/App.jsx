@@ -2,7 +2,6 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { LoginPage } from './pages/LoginPage';
-import { KanbanPage } from './pages/KanbanPage';
 import { DashboardPage } from './pages/DashboardPage';
 import { RoutinePage } from './pages/RoutinePage';
 import { ProtectedRoute } from './components/Auth/ProtectedRoute';
@@ -14,14 +13,6 @@ function App() {
       <AuthProvider>
         <Routes>
           <Route path="/login" element={<LoginPage />} />
-          <Route
-            path="/kanban"
-            element={
-              <ProtectedRoute>
-                <KanbanPage />
-              </ProtectedRoute>
-            }
-          />
           <Route
             path="/dashboard"
             element={

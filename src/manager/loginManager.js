@@ -1,26 +1,18 @@
 /**
  * Login Manager
- * Gerencia a lógica de autenticação e redirecionamento da página de login
+ * Gerencia a lógica de autenticação e redirecionamento
  */
 
 export const loginManager = {
   /**
-   * Verifica se o usuário já está autenticado e o redireciona se necessário
-   * @param {Object} user - Usuário autenticado
-   * @param {boolean} isLoading - Estado de carregamento da autenticação
-   * @param {Function} navigate - Função de navegação do react-router
+   * Verifica se o usuário já está autenticado e o redireciona
    */
   handleUserRedirect(user, isLoading, navigate) {
     if (user && !isLoading) {
-      navigate('/kanban');
+      navigate('/routine'); // <--- CORRIGIDO: Redireciona para Rotinas
     }
   },
 
-  /**
-   * Verifica se a página está carregando
-   * @param {boolean} isLoading - Estado de carregamento
-   * @returns {boolean}
-   */
   isPageLoading(isLoading) {
     return isLoading;
   },
