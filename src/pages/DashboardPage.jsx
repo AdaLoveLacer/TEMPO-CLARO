@@ -92,9 +92,14 @@ export const DashboardPage = () => {
             <h2>Análise de Tarefas</h2>
             <p>Visualize suas estatísticas e métricas de produtividade</p>
           </div>
-          <button className="btn-kanban" onClick={handleNavigateToKanban}>
-            📋 Ir para Kanban
-          </button>
+          <div className="nav-buttons">
+            <button className="btn-kanban" onClick={handleNavigateToKanban}>
+              📋 Ir para Kanban
+            </button>
+            <button className="btn-routine" onClick={() => navigate('/routine')}>
+              📅 Ir para Rotinas
+            </button>
+          </div>
         </div>
 
         {/* Cards de Estatísticas Principais */}

@@ -134,7 +134,14 @@
   font-size: 15px;
 }
 
-.btn-kanban {
+.nav-buttons {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.btn-kanban,
+.btn-routine {
   padding: 12px 24px;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
@@ -149,12 +156,23 @@
   font-family: inherit;
 }
 
-.btn-kanban:hover {
+.btn-routine {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+}
+
+.btn-kanban:hover,
+.btn-routine:hover {
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(102, 126, 234, 0.5);
 }
 
-.btn-kanban:active {
+.btn-routine:hover {
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.5);
+}
+
+.btn-kanban:active,
+.btn-routine:active {
   transform: translateY(0);
 }
 

@@ -11,3 +11,5 @@ export { taskCardManager } from './taskCardManager';
 export { taskColumnManager } from './taskColumnManager';
 export { taskModalManager } from './taskModalManager';
 export { taskEditModalManager } from './taskEditModalManager';
+export { routineManager } from './routineManager';
+export { googleCalendarManager } from './googleCalendarManager';
