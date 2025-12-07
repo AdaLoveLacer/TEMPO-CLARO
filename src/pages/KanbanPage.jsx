@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
+import { kanbanManager } from '../manager/kanbanManager';
 import '../styles/KanbanPage.css';
 import TaskBoard from '../components/Kanban/TaskBoard';
 
@@ -26,89 +27,39 @@ export const KanbanPage = () => {
 
   // Carregar tarefas do localStorage ao montar o componente
   useEffect(() => {
-    const savedTasks = localStorage.getItem('tasks');
-    if (savedTasks) {
-      try {
-        setTasks(JSON.parse(savedTasks));
-      } catch (err) {
-        console.error('Erro ao carregar tarefas:', err);
-      }
-    }
+    const loadedTasks = kanbanManager.loadTasksFromStorage();
+    setTasks(loadedTasks);
   }, []);
 
   // Salvar tarefas no localStorage sempre que mudar
   useEffect(() => {
-    localStorage.setItem('tasks', JSON.stringify(tasks));
+    kanbanManager.saveTasksToStorage(tasks);
   }, [tasks]);
 
   // Categorizar tarefas por status baseado na data
   const categorizeTasks = () => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    const todoTasks = [];
-    const inProgressTasks = [];
-    const completedTasks = [];
-
-    tasks.forEach((task) => {
-      const taskDate = new Date(task.date);
-      taskDate.setHours(0, 0, 0, 0);
-
-      if (task.completed) {
-        completedTasks.push(task);
-      } else if (taskDate.getTime() === today.getTime()) {
-        inProgressTasks.push(task);
-      } else if (taskDate > today) {
-        todoTasks.push(task);
-      } else {
-        // Tarefas vencidas não concluídas voltam para em progresso
-        inProgressTasks.push(task);
-      }
-    });
-
-    // Ordenar por data/hora (mais recentes na frente)
-    const sortByDate = (a, b) => new Date(b.date) - new Date(a.date);
-
-    return {
-      todo: todoTasks.sort(sortByDate),
-      inProgress: inProgressTasks.sort(sortByDate),
-      completed: completedTasks.sort(sortByDate),
-    };
+    return kanbanManager.categorizeTasks(tasks);
   };
 
   const handleAddTask = (taskData) => {
-    const newTask = {
-      id: Date.now(),
-      ...taskData,
-      completed: false,
-      createdAt: new Date().toISOString(),
-    };
+    const newTask = kanbanManager.createTask(taskData);
     setTasks([...tasks, newTask]);
   };
 
   const handleDeleteTask = (taskId) => {
-    setTasks(tasks.filter((task) => task.id !== taskId));
+    setTasks(kanbanManager.deleteTask(tasks, taskId));
   };
 
   const handleCompleteTask = (taskId) => {
-    setTasks(
-      tasks.map((task) =>
-        task.id === taskId ? { ...task, completed: !task.completed } : task
-      )
-    );
+    setTasks(kanbanManager.toggleCompleteTask(tasks, taskId));
   };
 
   const handleUpdateTask = (updatedTask) => {
-    setTasks(
-      tasks.map((task) =>
-        task.id === updatedTask.id ? updatedTask : task
-      )
-    );
+    setTasks(kanbanManager.updateTask(tasks, updatedTask));
   };
 
   const handleLogoutClick = () => {
-    handleLogout();
-    navigate('/login');
+    kanbanManager.handleLogout(handleLogout, navigate);
   };
 
   const categorizedTasks = categorizeTasks();
@@ -122,7 +73,7 @@ export const KanbanPage = () => {
           <div className="header-actions">
             <button 
               className="btn-stats" 
-              onClick={() => navigate('/dashboard')}
+              onClick={() => kanbanManager.navigateToDashboard(navigate)}
               title="Ver estatísticas"
             >
               📊 Estatísticas

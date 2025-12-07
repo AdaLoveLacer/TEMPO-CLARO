@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { GoogleLoginButton } from '../components/Auth/GoogleLoginButton';
+import { loginManager } from '../manager/loginManager';
 import '../styles/LoginPage.css';
 
 export const LoginPage = () => {
@@ -10,9 +11,7 @@ export const LoginPage = () => {
 
   // Redirecionar se já estiver logado
   useEffect(() => {
-    if (user && !isLoading) {
-      navigate('/kanban');
-    }
+    loginManager.handleUserRedirect(user, isLoading, navigate);
   }, [user, isLoading, navigate]);
 
   if (isLoading) {

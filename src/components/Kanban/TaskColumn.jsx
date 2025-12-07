@@ -1,4 +1,5 @@
 import React from 'react';
+import { taskColumnManager } from '../../manager/taskColumnManager';
 import '../../styles/TaskColumn.css';
 import TaskCard from './TaskCard';
 
@@ -12,7 +13,7 @@ const TaskColumn = ({
   onUpdateTask,
 }) => {
   return (
-    <div className={`task-column column-${color}`}>
+    <div className={taskColumnManager.getColumnClass(color)}>
       <div className="column-header">
         <div>
           <h3>{title}</h3>
@@ -21,13 +22,13 @@ const TaskColumn = ({
       </div>
 
       <div className="column-content">
-        {tasks.length === 0 ? (
+        {taskColumnManager.hasNoTasks(tasks) ? (
           <div className="empty-state">
             <p>Nenhuma tarefa aqui</p>
           </div>
         ) : (
           <div className="tasks-list">
-            {tasks.map((task) => (
+            {taskColumnManager.sortTasksByDate(tasks).map((task) => (
               <TaskCard
                 key={task.id}
                 task={task}

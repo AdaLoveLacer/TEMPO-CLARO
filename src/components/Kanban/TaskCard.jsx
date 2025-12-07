@@ -1,23 +1,14 @@
 import React, { useState } from 'react';
+import { taskCardManager } from '../../manager/taskCardManager';
 import '../../styles/TaskCard.css';
 import TaskEditModal from './TaskEditModal';
 
 const TaskCard = ({ task, onDelete, onComplete, onUpdate }) => {
   const [showEditModal, setShowEditModal] = useState(false);
 
-  const formatDate = (dateString) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('pt-BR', {
-      day: '2-digit',
-      month: 'short',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-  };
-
   return (
     <>
-      <div className={`task-card ${task.completed ? 'completed' : ''}`}>
+      <div className={taskCardManager.getTaskClass(task.completed)}>
         <div className="task-header">
           <input
             type="checkbox"
@@ -29,19 +20,19 @@ const TaskCard = ({ task, onDelete, onComplete, onUpdate }) => {
           <h4 className="task-title">{task.title}</h4>
         </div>
 
-        {task.description && (
+        {taskCardManager.hasDescription(task.description) && (
           <p className="task-description">{task.description}</p>
         )}
 
         <div className="task-footer">
           <div className="task-date">
             <span className="date-icon">📅</span>
-            {formatDate(task.date)}
+            {taskCardManager.formatDate(task.date)}
           </div>
           <div className="task-actions">
             <button
               className="btn-edit"
-              onClick={() => setShowEditModal(true)}
+              onClick={() => setShowEditModal(taskCardManager.openEditModal())}
               title="Editar tarefa"
             >
               ✏️
@@ -56,8 +47,8 @@ const TaskCard = ({ task, onDelete, onComplete, onUpdate }) => {
           </div>
         </div>
 
-        {task.priority && (
-          <div className={`task-priority priority-${task.priority}`}>
+        {taskCardManager.hasPriority(task.priority) && (
+          <div className={taskCardManager.getPriorityClass(task.priority)}>
             {task.priority}
           </div>
         )}
@@ -66,10 +57,10 @@ const TaskCard = ({ task, onDelete, onComplete, onUpdate }) => {
       {showEditModal && (
         <TaskEditModal
           task={task}
-          onClose={() => setShowEditModal(false)}
+          onClose={() => setShowEditModal(taskCardManager.closeEditModal())}
           onUpdateTask={(updatedTask) => {
             onUpdate(updatedTask);
-            setShowEditModal(false);
+            setShowEditModal(taskCardManager.closeEditModal());
           }}
         />
       )}

@@ -1,35 +1,29 @@
 import React, { useState } from 'react';
+import { taskModalManager } from '../../manager/taskModalManager';
 import '../../styles/TaskModal.css';
 
 const TaskModal = ({ onClose, onAddTask }) => {
-  const [formData, setFormData] = useState({
-    title: '',
-    description: '',
-    date: new Date().toISOString().slice(0, 16),
-    priority: 'média',
-  });
+  const [formData, setFormData] = useState(taskModalManager.getInitialFormData());
+  const [error, setError] = useState('');
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+    setFormData(taskModalManager.updateFormField(formData, name, value));
+    setError('');
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!formData.title.trim()) {
-      alert('Por favor, digite o título da tarefa');
+    
+    const validation = taskModalManager.validateForm(formData);
+    if (!validation.isValid) {
+      setError(validation.message);
       return;
     }
-    onAddTask(formData);
-    setFormData({
-      title: '',
-      description: '',
-      date: new Date().toISOString().slice(0, 16),
-      priority: 'média',
-    });
+
+    const taskData = taskModalManager.prepareTaskData(formData);
+    onAddTask(taskData);
+    setFormData(taskModalManager.resetForm());
   };
 
   return (
@@ -95,6 +89,8 @@ const TaskModal = ({ onClose, onAddTask }) => {
               </select>
             </div>
           </div>
+
+          {error && <div className="form-error">{error}</div>}
 
           <div className="form-actions">
             <button type="button" className="btn-cancel" onClick={onClose}>

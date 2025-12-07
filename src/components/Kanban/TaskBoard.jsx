@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { taskBoardManager } from '../../manager/taskBoardManager';
 import '../../styles/TaskBoard.css';
 import TaskColumn from './TaskColumn';
 import TaskModal from './TaskModal';
@@ -14,13 +15,15 @@ const TaskBoard = ({
 }) => {
   const [showModal, setShowModal] = useState(false);
 
+  const taskCounts = taskBoardManager.getTaskCounts(todoTasks, inProgressTasks, completedTasks);
+
   return (
     <div className="task-board">
       <div className="board-header">
         <h2>Minhas Tarefas</h2>
         <button
           className="btn-add-task"
-          onClick={() => setShowModal(true)}
+          onClick={() => setShowModal(taskBoardManager.openAddTaskModal())}
         >
           + Nova Tarefa
         </button>
@@ -29,7 +32,7 @@ const TaskBoard = ({
       <div className="board-columns">
         <TaskColumn
           title="A Fazer"
-          subtitle={`${todoTasks.length} tarefas`}
+          subtitle={`${taskCounts.todo} tarefas`}
           color="blue"
           tasks={todoTasks}
           onDeleteTask={onDeleteTask}
@@ -38,7 +41,7 @@ const TaskBoard = ({
         />
         <TaskColumn
           title="Em Progresso"
-          subtitle={`${inProgressTasks.length} tarefas`}
+          subtitle={`${taskCounts.inProgress} tarefas`}
           color="orange"
           tasks={inProgressTasks}
           onDeleteTask={onDeleteTask}
@@ -47,7 +50,7 @@ const TaskBoard = ({
         />
         <TaskColumn
           title="Concluídas"
-          subtitle={`${completedTasks.length} tarefas`}
+          subtitle={`${taskCounts.completed} tarefas`}
           color="green"
           tasks={completedTasks}
           onDeleteTask={onDeleteTask}
@@ -56,12 +59,12 @@ const TaskBoard = ({
         />
       </div>
 
-      {showModal && (
+      {taskBoardManager.isModalVisible(showModal) && (
         <TaskModal
-          onClose={() => setShowModal(false)}
+          onClose={() => setShowModal(taskBoardManager.closeAddTaskModal())}
           onAddTask={(taskData) => {
             onAddTask(taskData);
-            setShowModal(false);
+            setShowModal(taskBoardManager.closeAddTaskModal());
           }}
         />
       )}

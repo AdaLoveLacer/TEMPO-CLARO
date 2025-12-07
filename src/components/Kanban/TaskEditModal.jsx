@@ -1,59 +1,36 @@
 import React, { useState, useEffect } from 'react';
+import { taskEditModalManager } from '../../manager/taskEditModalManager';
 import '../../styles/TaskEditModal.css';
 
 const TaskEditModal = ({ task, onClose, onUpdateTask }) => {
-  const [formData, setFormData] = useState({
-    title: '',
-    description: '',
-    date: '',
-    priority: 'média',
-  });
+  const [formData, setFormData] = useState(taskEditModalManager.getInitialFormData(task));
   const [error, setError] = useState('');
 
   // Preencher form com dados da tarefa atual
   useEffect(() => {
     if (task) {
-      const taskDate = new Date(task.date);
-      const formattedDate = taskDate.toISOString().split('T')[0];
-
-      setFormData({
-        title: task.title || '',
-        description: task.description || '',
-        date: formattedDate || '',
-        priority: task.priority || 'média',
-      });
+      setFormData(taskEditModalManager.getInitialFormData(task));
     }
   }, [task]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+    setFormData(taskEditModalManager.updateFormField(formData, name, value));
     setError('');
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
 
-    // Validação
-    if (!formData.title.trim()) {
-      setError('O título da tarefa é obrigatório');
-      return;
-    }
-
-    if (!formData.date) {
-      setError('Selecione uma data para a tarefa');
+    const validation = taskEditModalManager.validateForm(formData);
+    if (!validation.isValid) {
+      setError(validation.message);
       return;
     }
 
     // Enviar dados atualizados
-    onUpdateTask({
-      ...task,
-      ...formData,
-      date: new Date(formData.date).toISOString(),
-    });
+    const updatedTask = taskEditModalManager.prepareUpdatedTask(task, formData);
+    onUpdateTask(updatedTask);
   };
 
   return (
@@ -80,7 +57,7 @@ const TaskEditModal = ({ task, onClose, onUpdateTask }) => {
               required
             />
             <span className="char-count">
-              {formData.title.length}/100
+              {taskEditModalManager.getTitleCharCount(formData.title)}/100
             </span>
           </div>
 
@@ -96,7 +73,7 @@ const TaskEditModal = ({ task, onClose, onUpdateTask }) => {
               rows="4"
             />
             <span className="char-count">
-              {formData.description.length}/500
+              {taskEditModalManager.getDescriptionCharCount(formData.description)}/500
             </span>
           </div>
 

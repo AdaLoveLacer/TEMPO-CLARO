@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
+import { dashboardManager } from '../manager/dashboardManager';
 import '../styles/DashboardPage.css';
 
 export const DashboardPage = () => {
@@ -20,51 +21,10 @@ export const DashboardPage = () => {
 
   // Carregar tarefas do localStorage
   useEffect(() => {
-    const savedTasks = localStorage.getItem('tasks');
-    if (savedTasks) {
-      try {
-        const parsedTasks = JSON.parse(savedTasks);
-        setTasks(parsedTasks);
-        calculateStats(parsedTasks);
-      } catch (err) {
-        console.error('Erro ao carregar tarefas:', err);
-      }
-    }
+    const loadedTasks = dashboardManager.loadTasksFromStorage();
+    setTasks(loadedTasks);
+    setStats(dashboardManager.calculateStats(loadedTasks));
   }, []);
-
-  // Calcular estatísticas
-  const calculateStats = (taskList) => {
-    const total = taskList.length;
-    const completed = taskList.filter((t) => t.completed).length;
-    const inProgress = taskList.filter(
-      (t) => !t.completed && new Date(t.date).toDateString() === new Date().toDateString()
-    ).length;
-    const pending = total - completed - inProgress;
-    const highPriority = taskList.filter((t) => t.priority === 'alta').length;
-    const mediumPriority = taskList.filter((t) => t.priority === 'média').length;
-    const lowPriority = taskList.filter((t) => t.priority === 'baixa').length;
-    const completionRate = total > 0 ? Math.round((completed / total) * 100) : 0;
-
-    setStats({
-      total,
-      completed,
-      inProgress,
-      pending,
-      highPriority,
-      mediumPriority,
-      lowPriority,
-      completionRate,
-    });
-  };
-
-  const handleLogoutClick = () => {
-    handleLogout();
-    navigate('/login');
-  };
-
-  const handleNavigateToKanban = () => {
-    navigate('/kanban');
-  };
 
   return (
     <div className="dashboard-container">
@@ -79,7 +39,7 @@ export const DashboardPage = () => {
               <p className="user-name">{user?.name}</p>
               <p className="user-email">{user?.email}</p>
             </div>
-            <button onClick={handleLogoutClick} className="logout-btn">
+            <button onClick={() => dashboardManager.handleLogout(handleLogout, navigate)} className="logout-btn">
               Sair
             </button>
           </div>
@@ -92,7 +52,7 @@ export const DashboardPage = () => {
             <h2>Análise de Tarefas</h2>
             <p>Visualize suas estatísticas e métricas de produtividade</p>
           </div>
-          <button className="btn-kanban" onClick={handleNavigateToKanban}>
+          <button className="btn-kanban" onClick={() => dashboardManager.navigateToKanban(navigate)}>
             📋 Ir para Kanban
           </button>
         </div>
@@ -163,18 +123,12 @@ export const DashboardPage = () => {
                 <div
                   className="priority-fill"
                   style={{
-                    width: `${
-                      stats.total > 0
-                        ? Math.round((stats.highPriority / stats.total) * 100)
-                        : 0
-                    }%`,
+                    width: `${dashboardManager.calculatePriorityPercentage(stats.highPriority, stats.total)}%`,
                   }}
                 ></div>
               </div>
               <p className="priority-percentage">
-                {stats.total > 0
-                  ? Math.round((stats.highPriority / stats.total) * 100)
-                  : 0}
+                {dashboardManager.calculatePriorityPercentage(stats.highPriority, stats.total)}
                 % do total
               </p>
             </div>
@@ -188,18 +142,12 @@ export const DashboardPage = () => {
                 <div
                   className="priority-fill"
                   style={{
-                    width: `${
-                      stats.total > 0
-                        ? Math.round((stats.mediumPriority / stats.total) * 100)
-                        : 0
-                    }%`,
+                    width: `${dashboardManager.calculatePriorityPercentage(stats.mediumPriority, stats.total)}%`,
                   }}
                 ></div>
               </div>
               <p className="priority-percentage">
-                {stats.total > 0
-                  ? Math.round((stats.mediumPriority / stats.total) * 100)
-                  : 0}
+                {dashboardManager.calculatePriorityPercentage(stats.mediumPriority, stats.total)}
                 % do total
               </p>
             </div>
@@ -213,18 +161,12 @@ export const DashboardPage = () => {
                 <div
                   className="priority-fill"
                   style={{
-                    width: `${
-                      stats.total > 0
-                        ? Math.round((stats.lowPriority / stats.total) * 100)
-                        : 0
-                    }%`,
+                    width: `${dashboardManager.calculatePriorityPercentage(stats.lowPriority, stats.total)}%`,
                   }}
                 ></div>
               </div>
               <p className="priority-percentage">
-                {stats.total > 0
-                  ? Math.round((stats.lowPriority / stats.total) * 100)
-                  : 0}
+                {dashboardManager.calculatePriorityPercentage(stats.lowPriority, stats.total)}
                 % do total
               </p>
             </div>
@@ -237,7 +179,7 @@ export const DashboardPage = () => {
             <p className="empty-icon">📭</p>
             <h3>Nenhuma tarefa ainda</h3>
             <p>Crie sua primeira tarefa no Kanban para ver as estatísticas aqui!</p>
-            <button className="btn-create" onClick={handleNavigateToKanban}>
+            <button className="btn-create" onClick={() => dashboardManager.navigateToKanban(navigate)}>
               Criar Primeira Tarefa
             </button>
           </div>
