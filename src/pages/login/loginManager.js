@@ -3,7 +3,7 @@
  * Gerencia a lógica de autenticação e redirecionamento na página de login
  */
 
-import { uiManager } from './uiManager';
+import { uiManager } from '../home/uiManager';
 
 export const loginManager = {
   /**

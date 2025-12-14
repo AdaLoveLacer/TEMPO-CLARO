@@ -3,8 +3,8 @@
  * Gerencia estatísticas baseadas nas Rotinas e lógica do dashboard
  */
 
-import { routineManager } from './routineManager';
-import { uiManager } from './uiManager';
+import { routineManager } from '../../components/Forms/routineManager';
+import { uiManager } from '../home/uiManager';
 
 export const dashboardManager = {
   /**

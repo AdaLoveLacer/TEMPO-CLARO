@@ -1,4 +1,3 @@
-// Barrel export for components
 export { GoogleLoginButton } from './Auth/GoogleLoginButton';
 export { ProtectedRoute } from './Auth/ProtectedRoute';
 export { LoadingSpinner } from './Common/LoadingSpinner';

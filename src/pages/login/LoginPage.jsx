@@ -1,9 +1,10 @@
 import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../hooks/useAuth';
-import { GoogleLoginButton, LoadingSpinner } from '../components';
-import { loginManager } from '../manager';
-import '../styles/pages/LoginPage.css';
+import { useAuth } from '../../components/Auth/useAuth';
+import { GoogleLoginButton } from '../../components/Auth/GoogleLoginButton';
+import { LoadingSpinner } from '../../components/Common/LoadingSpinner';
+import { loginManager } from './loginManager';
+import './LoginPage.css';
 
 export const LoginPage = () => {
   const { user, isLoading } = useAuth();

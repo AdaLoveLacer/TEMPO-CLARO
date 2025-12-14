@@ -3,7 +3,7 @@
  * Gerencia toda a lógica de estado e handlers da página de rotinas
  */
 
-import { routineManager } from './routineManager';
+import { routineManager } from '../../components/Forms/routineManager';
 import { googleCalendarManager } from './googleCalendarManager';
 import { uiManager } from './uiManager';
 

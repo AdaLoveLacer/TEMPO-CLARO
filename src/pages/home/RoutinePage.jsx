@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../hooks/useAuth';
-import { routinePageManager, uiManager } from '../manager';
-import { RoutineForm } from '../components';
-import '../styles/pages/RoutinePage.css';
+import { useAuth } from '../../components/Auth/useAuth';
+import { routinePageManager } from './routinePageManager';
+import { uiManager } from './uiManager';
+import { RoutineForm } from '../../components';
+import './RoutinePage.css';
 
 export const RoutinePage = () => {
   const { user, accessToken, handleLogout } = useAuth();

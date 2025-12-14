@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { routineManager } from '../../manager/routineManager';
-import '../../styles/components/forms/RoutineForm.css';
+import { routineManager } from './routineManager';
+import './RoutineForm.css';
 
 const RoutineForm = ({ onRoutineCreated, editingRoutine = null }) => {
   const [routine, setRoutine] = useState(routineManager.createEmptyRoutine());

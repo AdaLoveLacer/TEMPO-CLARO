@@ -1,8 +1,8 @@
 import React from 'react';
-import { useAuth } from '../hooks/useAuth';
+import { useAuth } from '../../components/Auth/useAuth';
 import { useNavigate } from 'react-router-dom';
-import { dashboardManager } from '../manager';
-import '../styles/pages/DashboardPage.css';
+import { dashboardManager } from './dashboardManager';
+import './DashboardPage.css';
 
 export const DashboardPage = () => {
   const { user, handleLogout } = useAuth();
